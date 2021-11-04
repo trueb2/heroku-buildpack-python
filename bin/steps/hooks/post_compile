@@ -5,3 +5,14 @@ if [ -f bin/post_compile ]; then
     chmod +x bin/post_compile
     sub_env bin/post_compile
 fi
+
+# rebuild python if it's missing loadable sqlite extensions
+if  ! python3 -msysconfig | grep enable-shared \
+    > /dev/null; then
+  PYTHON_VERSION="$(< runtime.txt)"
+  export WORKSPACE_DIR="$(cd "$BIN_DIR"/.. || exit; pwd)/builds"
+  rm -f .heroku/python/bin/python   # prevent failing ln after build
+  sed -i 's!figure --pre!figure --enable-shared --pre!' \
+    "$WORKSPACE_DIR"/runtimes/python3
+  "$WORKSPACE_DIR/runtimes/$PYTHON_VERSION" /app/.heroku/python/
+fi
